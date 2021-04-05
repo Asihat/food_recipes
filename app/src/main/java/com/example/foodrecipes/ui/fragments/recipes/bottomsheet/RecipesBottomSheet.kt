@@ -1,60 +1,87 @@
 package com.example.foodrecipes.ui.fragments.recipes.bottomsheet
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.asLiveData
+import androidx.navigation.fragment.findNavController
 import com.example.foodrecipes.R
+import com.example.foodrecipes.utils.Constants.Companion.DEFAULT_DIET_TYPE
+import com.example.foodrecipes.utils.Constants.Companion.DEFAULT_MEAL_TYPE
+import com.example.foodrecipes.viewmodels.RecipesViewModel
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import kotlinx.android.synthetic.main.recipes_bottom_sheet.view.*
+import java.util.*
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [RecipesBottomSheet.newInstance] factory method to
- * create an instance of this fragment.
- */
-class RecipesBottomSheet : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+class RecipesBottomSheet : BottomSheetDialogFragment() {
+
+    private lateinit var recipesViewModel: RecipesViewModel
+
+    private var mealTypeChip = DEFAULT_MEAL_TYPE
+    private var mealTypeChipId = 0
+    private var dietTypeChip = DEFAULT_DIET_TYPE
+    private var dietTypeChipId = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
+        recipesViewModel = ViewModelProvider(requireActivity()).get(RecipesViewModel::class.java)
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_recipes_bottom_sheet, container, false)
+        val mView = inflater.inflate(R.layout.recipes_bottom_sheet, container, false)
+
+        recipesViewModel.readMealAndDietType.asLiveData().observe(viewLifecycleOwner, { value ->
+            mealTypeChip = value.selectedMealType
+            dietTypeChip = value.selectedDietType
+            updateChip(value.selectedMealTypeId, mView.mealType_chipGroup)
+            updateChip(value.selectedDietTypeId, mView.dietType_chipGroup)
+        })
+
+        mView.mealType_chipGroup.setOnCheckedChangeListener { group, selectedChipId ->
+            val chip = group.findViewById<Chip>(selectedChipId)
+            val selectedMealType = chip.text.toString().toLowerCase(Locale.ROOT)
+            mealTypeChip = selectedMealType
+            mealTypeChipId = selectedChipId
+        }
+
+        mView.dietType_chipGroup.setOnCheckedChangeListener { group, selectedChipId ->
+            val chip = group.findViewById<Chip>(selectedChipId)
+            val selectedDietType = chip.text.toString().toLowerCase(Locale.ROOT)
+            dietTypeChip = selectedDietType
+            dietTypeChipId = selectedChipId
+        }
+
+        mView.appy_btn.setOnClickListener {
+            recipesViewModel.saveMealAndDietType(
+                mealTypeChip,
+                mealTypeChipId,
+                dietTypeChip,
+                dietTypeChipId
+            )
+            val action = RecipesBottomSheetDirections.actionRecipesBottomSheetToRecipesFragment(true)
+            findNavController().navigate(action)
+
+        }
+        return mView
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment RecipesBottomSheet.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            RecipesBottomSheet().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
+    private fun updateChip(chipId: Int, chipGroup: ChipGroup) {
+        if (chipId != 0) {
+            try {
+                chipGroup.findViewById<Chip>(chipId).isChecked = true
+            } catch (e: Exception) {
+                Log.d("RecipesBottomSheet", e.message.toString())
             }
+        }
     }
 }
