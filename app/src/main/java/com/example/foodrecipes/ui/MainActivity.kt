@@ -1,4 +1,4 @@
-package com.example.foodrecipes
+package com.example.foodrecipes.ui
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -7,14 +7,20 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import kotlinx.android.synthetic.main.activity_main.*
+import com.example.foodrecipes.R
+import com.example.foodrecipes.databinding.ActivityMainBinding
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setTheme(R.style.Theme_FoodRecipes)
+        setContentView(binding.root)
 
         navController = findNavController(R.id.navHostFragment)
         val appBarConfiguration = AppBarConfiguration(
@@ -25,7 +31,7 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        bottomNavigationView.setupWithNavController(navController)
+        binding.bottomNavigationView.setupWithNavController(navController)
         setupActionBarWithNavController(navController, appBarConfiguration)
     }
 
